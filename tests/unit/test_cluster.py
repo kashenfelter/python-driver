@@ -411,6 +411,18 @@ class ExecutionProfileTest(unittest.TestCase):
 
         @test_category configuration
         """
-        with patch('cassandra.cluster.log') as patched_logger:
-            Cluster(contact_points=['127.0.0.1'], load_balancing_policy=object())
-        patched_logger.warn.assert_not_called()
+        mode_to_kwargs = (
+            ('legacy', {'contact_points': ['127.0.0.1'],
+                        'load_balancing_policy': object()}),
+            ('execution profile', {
+                'contact_points': ['127.0.0.1'],
+                'execution_profiles': {EXEC_PROFILE_DEFAULT: ExecutionProfile(
+                    load_balancing_policy=object()
+                )}
+            })
+        )
+        for mode, kwargs in mode_to_kwargs:
+            with patch('cassandra.cluster.log') as patched_logger:
+                Cluster(**kwargs)
+            log.debug('checking logs in {mode} mode'.format(mode=mode))
+            patched_logger.warn.assert_not_called()
