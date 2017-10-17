@@ -16,6 +16,8 @@ try:
 except ImportError:
     import unittest  # noqa
 
+import logging
+
 from mock import patch
 
 from cassandra import ConsistencyLevel, DriverException, Timeout, Unavailable, RequestExecutionException, ReadTimeout, WriteTimeout, CoordinationFailure, ReadFailure, WriteFailure, FunctionFailure, AlreadyExists,\
@@ -29,6 +31,8 @@ from cassandra.pool import Host
 from tests.unit.utils import mock_session_pools
 from tests import connection_class
 
+
+log = logging.getLogger(__name__)
 
 class ExceptionTypeTest(unittest.TestCase):
 
@@ -376,13 +380,24 @@ class ExecutionProfileTest(unittest.TestCase):
 
         @test_category configuration
         """
-        with patch('cassandra.cluster.log') as patched_logger:
-            Cluster(contact_points=['127.0.0.1'])
-        patched_logger.warn.assert_called_once()
-        warning_message = patched_logger.warn.call_args[0][0]
-        self.assertIn('no load_balancing_policy', warning_message)
-        self.assertIn("contact_points = ['127.0.0.1']", warning_message)
-        self.assertIn('lbp = None', warning_message)
+        mode_to_kwargs = (
+            ('legacy', {'contact_points': ['127.0.0.1']}),
+            ('execution profile', {
+                'contact_points': ['127.0.0.1'],
+                'execution_profiles': {EXEC_PROFILE_DEFAULT: ExecutionProfile()}
+            })
+        )
+        for mode, kwargs in mode_to_kwargs:
+            log.debug('checking logs in {mode} mode'.format(mode=mode))
+            with patch('cassandra.cluster.log') as patched_logger:
+                Cluster(**kwargs)
+            patched_logger.warn.assert_called_once()
+            warning_message = ('Did not get expected warning message in {mode} '
+                               'mode. Got: {warning}'.format(
+                                   mode=mode,
+                                   warning=patched_logger.warn.call_args[0][0]))
+            self.assertIn('no load_balancing_policy', warning_message)
+            self.assertIn("contact_points = ['127.0.0.1']", warning_message)
 
     @mock_session_pools
     def test_no_warning_on_contact_points_with_lbp(self):
