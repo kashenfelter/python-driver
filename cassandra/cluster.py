@@ -793,17 +793,16 @@ class Cluster(object):
         if contact_points is not None:
             if contact_points is _NOT_SET:
                 self._contact_points_explicit = False
-                _contact_points_to_set = ['127.0.0.1']
+                contact_points = ['127.0.0.1']
             else:
                 self._contact_points_explicit = True
-                _contact_points_to_set = contact_points
 
-            if isinstance(_contact_points_to_set, six.string_types):
+            if isinstance(contact_points, six.string_types):
                 raise TypeError("contact_points should not be a string, it should be a sequence (e.g. list) of strings")
 
-            if None in _contact_points_to_set:
+            if None in contact_points:
                 raise ValueError("contact_points should not contain None (it can resolve to localhost)")
-            self.contact_points = _contact_points_to_set
+            self.contact_points = contact_points
 
         self.port = port
 
@@ -875,7 +874,7 @@ class Cluster(object):
                 self.profile_manager.profiles.update(execution_profiles)
                 self._config_mode = _ConfigMode.PROFILES
 
-        if contact_points is not _NOT_SET:
+        if self._contact_points_explicit:
             if self._config_mode is _ConfigMode.PROFILES:
                 default_lbp_profiles = self.profile_manager._profiles_without_explicit_lbps()
                 if default_lbp_profiles:
@@ -889,7 +888,7 @@ class Cluster(object):
                         'EPs without explicit LBPs = {eps})'
                         ''.format(cp=contact_points, eps=default_lbp_profiles))
             else:
-                if contact_points is not _NOT_SET and load_balancing_policy is None:
+                if load_balancing_policy is None:
                     log.warn(
                         'Cluster.__init__ called with contact_points '
                         'specified, but no load_balancing_policy. In the next '
