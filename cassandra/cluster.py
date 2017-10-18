@@ -243,17 +243,17 @@ class ExecutionProfile(object):
     """
 
     # indicates if lbp was set explicitly or uses default values
-    _explicit_load_balancing_policy = False
+    _load_balancing_policy_explicit = False
 
     def __init__(self, load_balancing_policy=_NOT_SET, retry_policy=None,
                  consistency_level=ConsistencyLevel.LOCAL_ONE, serial_consistency_level=None,
                  request_timeout=10.0, row_factory=named_tuple_factory, speculative_execution_policy=None):
 
         if load_balancing_policy is _NOT_SET:
-            self._explicit_load_balancing_policy = False
+            self._load_balancing_policy_explicit = False
             self.load_balancing_policy = default_lbp_factory()
         else:
-            self._explicit_load_balancing_policy = True
+            self._load_balancing_policy_explicit = True
             self.load_balancing_policy = load_balancing_policy
         self.retry_policy = retry_policy or RetryPolicy()
         self.consistency_level = consistency_level
@@ -275,7 +275,7 @@ class ProfileManager(object):
             if profile_name is EXEC_PROFILE_DEFAULT:
                 profile_name = 'EXEC_PROFILE_DEFAULT'
 
-            if not profile._explicit_load_balancing_policy:
+            if not profile._load_balancing_policy_explicit:
                 log.warn(
                     'Contact points for a cluster were specified, but '
                     'no load_balancing_policy was explicitly specified in '
